@@ -94,7 +94,11 @@ int main(int argc, char **argv){
 
 	        if(fbuf == NULL) break;
 			if(strcmp(fbuf, "\n") == 0)		continue;
-			if(strncmp(fbuf, "quit\n", 5) == 0)	break;
+			if(strncmp(fbuf, "quit\n", 5) == 0){
+            
+                printf("%s", fbuf);
+                break;
+            }
 
 			printf("%s", fbuf);
 			fbuf[strlen(fbuf) -1] ='\0';
