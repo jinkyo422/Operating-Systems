@@ -70,7 +70,8 @@ int main(int argc, char **argv)
 					}
 				}
 			}
-			if(pid > 0){
+			if(pid > 0)
+			{
 				while(wait(&proc_status) != -1);
 			}
 			row = 0;
@@ -101,7 +102,8 @@ int main(int argc, char **argv)
 					}
 				}
 			}
-			if(pid > 0){
+			if(pid > 0)
+			{
 				while(wait(&proc_status) != -1);
 			}
 			row = 0;
