@@ -1,14 +1,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <fcntl.h>//
+#include <fcntl.h>
 #include <string.h>
-#include <assert.h>//
-#include <sys/types.h>//
+#include <assert.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#define MAX_LINE 100
+#define MAX_LINE 1000
 
 char *temp[MAX_LINE][MAX_LINE];
 int row = 0;
@@ -65,9 +65,14 @@ int main(int argc, char **argv)
 				if(pid==0)
 				{
 					if(execvp(temp[j][0], temp[j]) < 0){
-					fprintf(stderr, "exec not implemented\n");
+						fprintf(stderr, "exec not implemented\n");
 					exit(0);
 					}
+				}
+				else if(pid < 0)
+				{
+					fprintf(stderr, "fork not implemented\n");
+					return -1;
 				}
 			}
 			if(pid > 0)
@@ -86,6 +91,8 @@ int main(int argc, char **argv)
 	        char *fbuf = fgets( ftemp, MAX_LINE-1, fp );
 
 	        if(fbuf == NULL) break;
+			if(strcmp(fbuf, "\n") == 0)		continue;
+			if(strncmp(fbuf, "quit\n", 5) == 0)	break;
 
 			printf("%s", fbuf);
 			fbuf[strlen(fbuf) -1] ='\0';
@@ -97,9 +104,14 @@ int main(int argc, char **argv)
 				if(pid==0)
 				{
 					if(execvp(temp[j][0], temp[j]) < 0){
-					fprintf(stderr, "exec not implemented\n");
+						fprintf(stderr, "exec not implemented\n");
 					exit(0);
 					}
+				}
+				else if(pid < 0)
+				{
+					fprintf(stderr, "fork not implemented\n");
+					return -1;
 				}
 			}
 			if(pid > 0)
