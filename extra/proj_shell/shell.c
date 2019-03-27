@@ -14,6 +14,7 @@ char *temp[MAX_LINE][MAX_LINE];
 int row = 0;
 
 int gettoken(char *buf, const char *token){
+
 	int num = 0;
 	char *flag = NULL;
 
@@ -26,7 +27,7 @@ int gettoken(char *buf, const char *token){
 		if((temp[row][num] = strtok(NULL, token)) == NULL)	break;
 
 		if(strcmp(temp[row][num], ";") == 0){
-			temp[row][num] = NULL;
+            temp[row][num] = NULL;
             row++;
             num=0;
             continue;
@@ -38,8 +39,8 @@ int gettoken(char *buf, const char *token){
 	}
 	return num;
 }
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv){
+
 	int proc_status;
 	pid_t pid;
 	FILE *fp = NULL;
@@ -62,21 +63,22 @@ int main(int argc, char **argv)
 			gettoken(buf, " ");
 			for(int j = 0; j<=row; j++){
 				pid = fork();
-				if(pid==0)
-				{
+				if(pid==0){
+
 					if(execvp(temp[j][0], temp[j]) < 0){
+
 						fprintf(stderr, "exec not implemented\n");
-					exit(0);
+					    exit(0);
 					}
 				}
-				else if(pid < 0)
-				{
+				else if(pid < 0){
+
 					fprintf(stderr, "fork not implemented\n");
 					return -1;
 				}
 			}
-			if(pid > 0)
-			{
+			if(pid > 0){
+
 				while(wait(&proc_status) != -1);
 			}
 			row = 0;
@@ -86,8 +88,8 @@ int main(int argc, char **argv)
 
 		char ftemp[MAX_LINE];
 
-		while( !feof( fp ) )
-		{
+		while( !feof( fp ) ){
+
 	        char *fbuf = fgets( ftemp, MAX_LINE-1, fp );
 
 	        if(fbuf == NULL) break;
@@ -101,21 +103,21 @@ int main(int argc, char **argv)
 			for(int j = 0; j<=row; j++){
 
 				pid = fork();
-				if(pid==0)
-				{
+				if(pid==0){
+
 					if(execvp(temp[j][0], temp[j]) < 0){
 						fprintf(stderr, "exec not implemented\n");
-					exit(0);
-					}
-				}
-				else if(pid < 0)
-				{
+					    exit(0);
+			    	}
+			    }
+			    else if(pid < 0){
+
 					fprintf(stderr, "fork not implemented\n");
 					return -1;
 				}
 			}
-			if(pid > 0)
-			{
+			if(pid > 0){
+
 				while(wait(&proc_status) != -1);
 			}
 			row = 0;
