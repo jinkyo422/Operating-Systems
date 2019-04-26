@@ -14,6 +14,16 @@ extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
 
+extern int tick_total;
+extern struct proc* q0[64];
+extern struct proc* q1[64];
+extern int front[2];
+extern int rear[2];
+extern int size[2];
+extern void Enqueue(int, struct proc*);
+extern void Dequeue(int);
+extern int period[2];
+
 void
 tvinit(void)
 {
@@ -109,8 +119,31 @@ trap(struct trapframe *tf)
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER)
-    yield();
+     tf->trapno == T_IRQ0+IRQ_TIMER){
+#ifdef FCFS_SCHED
+      yield();
+#elif MLFQ_SCHED
+      if(myproc()->tick == period[myproc()->level]){
+          myproc()->tick = 0;
+          if(myproc()->level == 0){
+              Dequeue(0);
+              myproc()->level++;
+              Enqueue(1,myproc());
+          }
+          else if(myproc()->level == 1){
+              if(myproc()->priority > 0)
+                  myproc()->priority--;
+          }
+      }
+      else{
+          myproc()->tick++;
+          tick_total++;
+      }
+      yield();
+#else
+      yield();
+#endif
+  }
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)

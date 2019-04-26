@@ -95,3 +95,13 @@ sys_yield(void)
     yield();
     return 0;
 }
+int
+sys_getlev(void)
+{
+  return myproc()->level;
+}
+int
+sys_setpriority(int pid, int priority)
+{
+  return setpriority(pid, priority);
+}

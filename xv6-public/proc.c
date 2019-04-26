@@ -6,6 +6,40 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+// For MLFQ
+int period[2] = {4, 8}; // Priority for each queue
+int tick_total = 0;     // Total tick  
+int boost = 0;          // Boost check
+// MLFQ queue struct 
+struct proc* q0[64];
+struct proc* q1[64];
+int front[2] = {0,0};
+int rear[2] = {-1,-1};
+int size[2] = {0,0};
+void 
+Enqueue(int x, struct proc* p)
+{
+  if(size[x] == 64)
+      return ;
+  size[x]++;
+  rear[x] = (rear[x]+1)%64;
+  switch (x){
+      case 0:
+          q0[rear[x]] = p;
+          break;
+      case 1:
+          q1[rear[x]] = p;
+          break;
+    }
+}
+void
+Dequeue(int x)
+{
+  if(size[x] == 0)
+      return ;
+  size[x]--;
+  front[x] = (front[x]+1)%64;
+}
 
 struct {
   struct spinlock lock;
@@ -81,6 +115,11 @@ allocproc(void)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == UNUSED)
       goto found;
+  
+  p->tick = 0;
+  p->level = 0;
+  p->priority = 0;
+  Enqueue(0,p);
 
   release(&ptable.lock);
   return 0;
@@ -88,7 +127,10 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-
+  p->tick = 0;
+  p->level = 0;
+  p->priority = 0;
+  Enqueue(0,p);
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -329,9 +371,158 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
+    
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+#ifdef FCFS_SCHED
+    struct proc *first=0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state == RUNNABLE){
+            if (first!=0){
+                if(p->pid < first->pid)
+                    first = p;
+            }
+            else
+                first = p;
+        }
+    }
+    if (first!=0){
+        p = first;
+        p->tick++;
+        if(p->tick >= 100){
+            cprintf("killed process %d\n", p->pid);
+            p->killed = 1;
+        }
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        swtch(&(c->scheduler),p->context);
+        switchkvm();
+        c->proc = 0;
+    }
+#elif MLFQ_SCHED
+    int i;
+    struct proc *temp = 0;
+
+    if(boost){
+        while(size[1]){
+            p = q1[front[1]];
+            p->tick = 0;
+            p->level = 0;
+            p->priority = 0;
+            Enqueue(0,p);
+            Dequeue(1);
+        }
+        p = 0;
+        boost = 0;
+        tick_total = 0;
+    }
+    // Level 0 queue operation
+    if(size[0] != 0){
+        int f = front[0],r = rear[0];
+        if(f > r){
+            for(i = f; i < 64; i++){
+                if(q0[i]->state != RUNNABLE)
+                    continue;
+                p = q0[i];
+                c->proc = p;
+                switchuvm(p);
+                p->state = RUNNING;
+                swtch(&(c->scheduler), p->context);
+                switchkvm();
+                c->proc = 0;
+                if(tick_total >= 100){
+                    boost = 1;
+                    break;
+                }
+            }
+            f = 0;
+        }
+
+        for(i = f ; i <= r; i++){
+            if(q0[i]->state != RUNNABLE)
+                continue;
+            p = q0[i];
+            c->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+            swtch(&(c->scheduler), p->context);
+            switchkvm();
+            c->proc = 0;
+            if(tick_total >= 100){
+                boost = 1;
+                break;
+            }
+        }
+    }
+    // Level 1 queue operation
+    else if(size[1] != 0){
+        int f = front[1], r = rear[1];
+        if(f > r){
+            for(i = f; i< 64; i++){
+                if(q1[i]->state == RUNNABLE){
+                    if(temp!=0){
+                        if(temp->priority < q1[i]->priority)
+                            temp = q1[i];
+                        else if(temp->priority == q1[i]->priority){
+                            if(temp->pid > q1[i]->pid)
+                                temp = q1[i];
+                        }
+                    }
+                    else
+                        temp = q1[i];
+                }
+                if(temp != 0){
+                    p = temp;
+                    c->proc = p;
+                    switchuvm(p);
+                    p->state = RUNNING;
+                    swtch(&(c->scheduler), p->context);
+                    switchkvm();
+                    c->proc = 0;
+                }
+                if(tick_total >= 100){
+                    boost = 1;    
+                    break;
+                }
+                if(size[0] != 0)
+                    break;
+            }
+            f = 0;
+        }
+        if(boost || size[0] != 0)
+            continue;
+        for(i = f; i <= r; i++){
+            if(q1[i]->state == RUNNABLE){
+                if(temp!=0){
+                    if(temp->priority < q1[i]->priority)
+                        temp = q1[i];
+                    else if(temp->priority == q1[i]->priority){
+                        if(temp->pid > q1[i]->pid)
+                            temp = q1[i];
+                    }
+                }
+                else
+                    temp = q1[i];
+            }
+            if(temp != 0){
+                p = temp;
+                c->proc = p;
+                switchuvm(p);
+                p->state = RUNNING;
+                swtch(&(c->scheduler), p->context);
+                switchkvm();
+                c->proc = 0;
+            }
+            if(tick_total >= 100){
+                boost = 1;
+                break;
+            }
+            if(size[0] != 0)
+                break;
+        }
+    }
+#else
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
@@ -350,6 +541,7 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
+#endif
     release(&ptable.lock);
 
   }
@@ -531,4 +723,16 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+int
+setpriority(int pid, int priority)
+{
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      p->priority = priority;
+      return 0;
+    }
+  }
+  return -1;
 }
