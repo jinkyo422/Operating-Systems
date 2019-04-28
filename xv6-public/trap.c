@@ -123,23 +123,30 @@ trap(struct trapframe *tf)
 #ifdef FCFS_SCHED
       yield();
 #elif MLFQ_SCHED
-      if(myproc()->tick == period[myproc()->level]){
-          myproc()->tick = 0;
-          if(myproc()->level == 0){
-              Dequeue(0);
-              myproc()->level++;
-              Enqueue(1,myproc());
+      if(myproc()->monopoly != 1){
+          if(myproc()->tick == period[myproc()->level]){
+              switch (myproc()->level){
+                  case 0:
+                      myproc()->tick = 0;
+                      Dequeue(0);
+                      myproc()->level++;
+                      Enqueue(1, myproc());
+                      yield();
+                      break;
+                  case 1:
+                      myproc()->tick = 0;
+                      if(myproc()->priority > 0)
+                          myproc()->priority--;
+                      yield();
+                      break;
+              }
           }
-          else if(myproc()->level == 1){
-              if(myproc()->priority > 0)
-                  myproc()->priority--;
+          else{
+              myproc()->tick++;
+              tick_total++;
+              yield();
           }
       }
-      else{
-          myproc()->tick++;
-          tick_total++;
-      }
-      yield();
 #else
       yield();
 #endif

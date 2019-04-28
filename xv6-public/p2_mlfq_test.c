@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   }
 
   exit_child(p);
-
+  
   // Test 3
   printf(1, "\nWith yield\n");
 
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
   exit_child(p);
 
   // Test 4
-  /*
+  
   printf(1, "\nMonopolize\n");
 
   p = create_child();
@@ -94,14 +94,14 @@ int main(int argc, char **argv) {
     int pid = getpid();
     int cnt[2] = {0};
     if (me == NUM_CHILD - 1)
-      monopolize(2019154421);
+      monopolize(2015005078);
     for (int i = 0; i < NUM_LOOP4; i++)
       cnt[getlev()]++;
     printf(1, "process %d: L0=%d, L1=%d\n", pid, cnt[0], cnt[1]);
     if (me == NUM_CHILD - 1)
-      monopolize(2019154421);
+      monopolize(2015005078);
   }  
 
   exit_child(p);
-  */exit();
+  exit();
 }

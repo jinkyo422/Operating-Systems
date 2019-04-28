@@ -101,7 +101,23 @@ sys_getlev(void)
   return myproc()->level;
 }
 int
-sys_setpriority(int pid, int priority)
+sys_setpriority(void)
+{ 
+  int pid;
+  int priority;
+  if(argint(0, &pid) < 0 )
+      return -1;
+  if(argint(1, &priority) < 0)
+      return -1;
+  setpriority(pid, priority);
+  return 0;
+}
+int
+sys_monopolize(void)
 {
-  return setpriority(pid, priority);
+  int password;
+  if(argint(0, &password) < 0)
+      return -1;
+  monopolize(password);
+  return 0;
 }

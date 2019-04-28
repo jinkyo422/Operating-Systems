@@ -9,7 +9,7 @@
 // For MLFQ
 int period[2] = {4, 8}; // Priority for each queue
 int tick_total = 0;     // Total tick  
-int boost = 0;          // Boost check
+int boostflag = 0;          // Boost check
 // MLFQ queue struct 
 struct proc* q0[64];
 struct proc* q1[64];
@@ -119,6 +119,7 @@ allocproc(void)
   p->tick = 0;
   p->level = 0;
   p->priority = 0;
+  p->monopoly = 0;
   Enqueue(0,p);
 
   release(&ptable.lock);
@@ -130,6 +131,7 @@ found:
   p->tick = 0;
   p->level = 0;
   p->priority = 0;
+  p->monopoly = 0;
   Enqueue(0,p);
   release(&ptable.lock);
 
@@ -404,7 +406,7 @@ scheduler(void)
     int i;
     struct proc *temp = 0;
 
-    if(boost){
+    if(boostflag){
         while(size[1]){
             p = q1[front[1]];
             p->tick = 0;
@@ -414,7 +416,7 @@ scheduler(void)
             Dequeue(1);
         }
         p = 0;
-        boost = 0;
+        boostflag = 0;
         tick_total = 0;
     }
     // Level 0 queue operation
@@ -432,7 +434,7 @@ scheduler(void)
                 switchkvm();
                 c->proc = 0;
                 if(tick_total >= 100){
-                    boost = 1;
+                    boostflag = 1;
                     break;
                 }
             }
@@ -450,7 +452,7 @@ scheduler(void)
             switchkvm();
             c->proc = 0;
             if(tick_total >= 100){
-                boost = 1;
+                boostflag = 1;
                 break;
             }
         }
@@ -472,25 +474,25 @@ scheduler(void)
                     else
                         temp = q1[i];
                 }
-                if(temp != 0){
-                    p = temp;
-                    c->proc = p;
-                    switchuvm(p);
-                    p->state = RUNNING;
-                    swtch(&(c->scheduler), p->context);
-                    switchkvm();
-                    c->proc = 0;
-                }
                 if(tick_total >= 100){
-                    boost = 1;    
+                    boostflag = 1;
                     break;
                 }
                 if(size[0] != 0)
                     break;
             }
+            if(temp != 0){
+                p = temp;
+                c->proc = p;
+                switchuvm(p);
+                p->state = RUNNING;
+                swtch(&(c->scheduler), p->context);
+                switchkvm();
+                c->proc = 0;
+            }
             f = 0;
         }
-        if(boost || size[0] != 0)
+        if(boostflag == 1 || size[0] != 0)
             continue;
         for(i = f; i <= r; i++){
             if(q1[i]->state == RUNNABLE){
@@ -505,21 +507,21 @@ scheduler(void)
                 else
                     temp = q1[i];
             }
-            if(temp != 0){
-                p = temp;
-                c->proc = p;
-                switchuvm(p);
-                p->state = RUNNING;
-                swtch(&(c->scheduler), p->context);
-                switchkvm();
-                c->proc = 0;
-            }
             if(tick_total >= 100){
-                boost = 1;
+                boostflag = 1;
                 break;
             }
             if(size[0] != 0)
                 break;
+        }
+        if(temp != 0){
+            p = temp;
+            c->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+            swtch(&(c->scheduler), p->context);
+            switchkvm();
+            c->proc = 0;
         }
     }
 #else
@@ -724,15 +726,30 @@ procdump(void)
     cprintf("\n");
   }
 }
-int
+void
 setpriority(int pid, int priority)
-{
+{ 
   struct proc *p;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
       p->priority = priority;
-      return 0;
+      return;
     }
   }
-  return -1;
+  return;
+}
+void
+monopolize(int password)
+{
+  if(password != 2015005078){
+      cprintf("killed process %d\n", myproc()->pid);
+      myproc()->killed = 1;
+      yield();
+  }
+  else{
+      if(myproc()->monopoly == 1)
+          myproc()->monopoly = 0;
+      else
+          myproc()->monopoly = 1;
+  }
 }
