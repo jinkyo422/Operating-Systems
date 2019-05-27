@@ -20,7 +20,14 @@ main(void)
   dup(0);  // stderr
 
   for(;;){
-    printf(1, "init: starting sh\n");
+    printf(1, "Hello, xv6!\n");
+    printf(1, "5\n");
+    printf(1, "4\n");
+    printf(1, "3\n");
+    printf(1, "2\n");
+    printf(1, "1\n");
+    printf(1, "start!!\n");
+    //printf(1, "init: starting sh\n");
     pid = fork();
     if(pid < 0){
       printf(1, "init: fork failed\n");

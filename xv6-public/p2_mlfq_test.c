@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   int p; // is this parent?
 
   printf(1, "MLFQ test start\n");
-
+/*
   // Test 1
   printf(1, "\nFocused priority\n");
 
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   }
 
   exit_child(p);
-  
+ 
   // Test 3
   printf(1, "\nWith yield\n");
 
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
   }
 
   exit_child(p);
-
+*/
   // Test 4
   
   printf(1, "\nMonopolize\n");
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
       cnt[getlev()]++;
     printf(1, "process %d: L0=%d, L1=%d\n", pid, cnt[0], cnt[1]);
     if (me == NUM_CHILD - 1)
-      monopolize(2015005078);
+      monopolize(2015005077);
   }  
 
   exit_child(p);
