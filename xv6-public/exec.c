@@ -18,6 +18,15 @@ exec(char *path, char **argv)
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
+  int oldtid = 0;
+
+  if(curproc->root){
+      curproc->parent = curproc->root->parent;
+      curproc->root = 0;
+      oldtid = curproc->tid;
+      curproc->tid = 0;
+  }
+  select(curproc->pid, curproc);
 
   begin_op();
 
@@ -100,7 +109,12 @@ exec(char *path, char **argv)
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
   switchuvm(curproc);
-  freevm(oldpgdir);
+
+  if(oldtid == 0)
+      freevm(oldpgdir);
+
+  clean(curproc->pid, curproc);
+
   return 0;
 
  bad:
@@ -110,5 +124,6 @@ exec(char *path, char **argv)
     iunlockput(ip);
     end_op();
   }
+  clean(curproc->pid, curproc);
   return -1;
 }

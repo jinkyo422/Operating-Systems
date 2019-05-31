@@ -191,6 +191,11 @@ UPROGS=\
     _test_yield\
     _p2_fcfs_test\
     _p2_mlfq_test\
+    _thread_test\
+    _thread_kill\
+    _thread_exit\
+    _thread_exec\
+    _hello_thread\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -262,7 +267,8 @@ EXTRA=\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
 	printf.c umalloc.c my_userapp.c test.c user_app.c test_yield.c\
     p2_fcfs_test.c p2_mlfq_test.c\
-	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+	thread_test.c thread_kill.c thread_exit.c thread_exec.c hello_thread.c\
+    README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
 
 dist:
