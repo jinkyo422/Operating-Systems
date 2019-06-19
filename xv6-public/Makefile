@@ -196,6 +196,7 @@ UPROGS=\
     _thread_exit\
     _thread_exec\
     _hello_thread\
+    _file_test\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -268,6 +269,7 @@ EXTRA=\
 	printf.c umalloc.c my_userapp.c test.c user_app.c test_yield.c\
     p2_fcfs_test.c p2_mlfq_test.c\
 	thread_test.c thread_kill.c thread_exit.c thread_exec.c hello_thread.c\
+    file_test.c\
     README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
 
